@@ -17,26 +17,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+        run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install
@@ -44,3 +27,17 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Prebuild Android project
+        run: npx expo prebuild --platform android --clean
+
+      - name: Build Debug APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
